@@ -1,0 +1,2 @@
+# No external dependencies yet — unittest is built into Python
+# We'll add packages here in later days
