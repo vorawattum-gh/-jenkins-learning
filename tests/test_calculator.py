@@ -4,7 +4,7 @@ import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from calculator import add, subtract, multiply, divide
+from calculator import add, subtract, multiply, divide, power
 
 class TestCalculator(unittest.TestCase):
 
@@ -23,6 +23,10 @@ class TestCalculator(unittest.TestCase):
     def test_divide(self):
         self.assertEqual(divide(10, 2), 5.0)
         self.assertRaises(ValueError, divide, 10, 0)
+
+    def test_power(self):
+        self.assertEqual(power(2, 3), 8)
+        self.assertEqual(power(5, 0), 1)
 
 if __name__ == '__main__':
     unittest.main()
