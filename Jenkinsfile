@@ -125,7 +125,7 @@ post {
     failure {
         echo "❌ ${env.APP_NAME} build #${env.BUILD_NUMBER} failed"
         mail(
-            to: "${env.NOTIFY_EMAIL}"
+            to: "${env.NOTIFY_EMAIL}",
             subject: "❌ Jenkins — ${env.APP_NAME} Build #${env.BUILD_NUMBER} FAILED",
             body: """
                 Build failed on ${params.TARGET_ENV}.
