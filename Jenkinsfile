@@ -6,6 +6,7 @@ pipeline {
         SRC_DIR   = 'src'
         TESTS_DIR = 'tests'
         PYTHON    = 'python3'
+        NOTIFY_EMAIL = credentials('notification-email')
     }
 
     parameters {
@@ -57,6 +58,15 @@ pipeline {
                 echo "Running unit tests..."
                 sh 'python3 -m pytest ${TESTS_DIR}/ -v'
             }
+            post {
+                success {
+                    echo "✅ All tests passed"
+                }
+                failure {
+                    echo "❌ Tests failed — review pytest output above"
+                    echo "Commit that broke tests: ${env.GIT_COMMIT}"
+                }
+            }
         }
 
         stage('Deploy') {
@@ -91,15 +101,50 @@ pipeline {
         }
     }
 
-    post {
-        success {
-            echo "${env.APP_NAME} build #${env.BUILD_NUMBER} succeeded on ${params.TARGET_ENV}"
-        }
-        failure {
-            echo "${env.APP_NAME} build #${env.BUILD_NUMBER} failed on ${params.TARGET_ENV}"
-        }
-        always {
-            echo "Status: ${currentBuild.currentResult}"
-        }
+post {
+    always {
+        echo "Build #${env.BUILD_NUMBER} finished — Status: ${currentBuild.currentResult}"
+        cleanWs()
     }
+    success {
+        echo "✅ ${env.APP_NAME} build #${env.BUILD_NUMBER} succeeded"
+        mail(
+            to: "${env.NOTIFY_EMAIL}",
+            subject: "✅ Jenkins — ${env.APP_NAME} Build #${env.BUILD_NUMBER} Succeeded",
+            body: """
+                Build succeeded on ${params.TARGET_ENV}.
+
+                Job      : ${env.JOB_NAME}
+                Build #  : ${env.BUILD_NUMBER}
+                Branch   : ${env.GIT_BRANCH}
+                Commit   : ${env.GIT_COMMIT}
+                URL      : ${env.BUILD_URL}
+                            """
+                        )
+                    }
+    failure {
+        echo "❌ ${env.APP_NAME} build #${env.BUILD_NUMBER} failed"
+        mail(
+            to: "${env.NOTIFY_EMAIL}"
+            subject: "❌ Jenkins — ${env.APP_NAME} Build #${env.BUILD_NUMBER} FAILED",
+            body: """
+                Build failed on ${params.TARGET_ENV}.
+
+                Job      : ${env.JOB_NAME}
+                Build #  : ${env.BUILD_NUMBER}
+                Branch   : ${env.GIT_BRANCH}
+                Commit   : ${env.GIT_COMMIT}
+                URL      : ${env.BUILD_URL}
+
+                Review the console output at the URL above.
+            """
+        )
+    }
+    fixed {
+        echo "🔧 Build is back to green"
+    }
+    changed {
+        echo "⚠️ Build outcome changed from previous run"
+    }
+}
 }
